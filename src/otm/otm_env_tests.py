@@ -20,19 +20,30 @@ def test_decode_action():
 
 def test_encode_state():
     env = get_env()
-    env.otm4rl.run_simulation(600)
+    env.otm4rl.initialize()
+    env.otm4rl.advance(600)
     state = env.otm4rl.get_queues()
+    print(state)
     print(env.encode_state(state))
     del env
 
 def test_set_state():
 	env = get_env()
+	env.otm4rl.initialize()
+	print(env.otm4rl.get_queues())
 	state = env.otm4rl.get_max_queues()
+	in_links = set([rc_info["in_link"] for rc_info in env.otm4rl.get_road_connection_info().values()])
+	out_links = set([rc_info["out_link"] for rc_info in env.otm4rl.get_road_connection_info().values()])
+	out_links = list(out_links - in_links)
 	for link_id in state.keys():
-		p = np.random.random()
-		state[link_id] = {"waiting": round(p*state[link_id]), "transit": round((1-p)*state[link_id])}
-	env.set_state(state)
+		if link_id in out_links:
+			state[link_id] = {"waiting": int(0), "transit": int(0)}
+		else:
+			p = np.random.random()
+			q = np.random.random()
+			state[link_id] = {"waiting": round(p*state[link_id]), "transit": round(q*(1-p)*state[link_id])}
 	print(state)
+	env.set_state(state)
 	print(env.state)
 	print(env.otm4rl.get_queues())
 	del env
@@ -67,14 +78,26 @@ def test_step():
 
 def test_plot_environment():
 	env = get_env()
-	env.otm4rl.initialize()
+
+	env.reset()
 	env.plot_environment().show()
-	env.otm4rl.advance(env.time_step)
+	action = np.random.choice(env.action_space)
+	print(env.decode_action(action))
+	state, reward = env.step(action)
 	env.plot_environment().show()
-	env.otm4rl.advance(env.time_step)
+	action = np.random.choice(env.action_space)
+	print(env.decode_action(action))
+	state, reward = env.step(action)
 	env.plot_environment().show()
-	env.otm4rl.advance(env.time_step)
+	action = np.random.choice(env.action_space)
+	print(env.decode_action(action))
+	state, reward = env.step(action)
 	env.plot_environment().show()
 
 if __name__ == '__main__':
-	test_plot_environment()
+	test_encode_state()
+	test_decode_action()
+	# test_set_state()
+	# test_reset()
+	# test_step()
+	# test_plot_environment()
