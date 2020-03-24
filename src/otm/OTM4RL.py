@@ -15,7 +15,16 @@ class OTM4RL:
     def get_link_ids(self):
         return self.otmwrapper.otm.scenario().get_link_ids()
 
-    def get_road_connection_info(self, road_connection_id):
+    def get_node_ids(self):
+        return self.otmwrapper.otm.scenario().get_node_ids()
+
+    def get_link_with_id(self, link_id):
+        return self.otmwrapper.otm.scenario().get_link_with_id(link_id)
+
+    def get_node_with_id(self, node_id):
+        return self.otmwrapper.otm.scenario().get_node_with_id(node_id)
+
+    def get_road_connection_info(self):
 
         road_connections = {1: {"in_link":1, "out_link":2},
                             2: {"in_link":2, "out_link":13},
@@ -61,7 +70,7 @@ class OTM4RL:
                             42: {"in_link":27, "out_link":5},
                             43: {"in_link":27, "out_link":28},
                             44: {"in_link":27, "out_link":8}}
-        return road_connections[road_connection_id]
+        return road_connections
 
     def get_max_queues(self):
         max_queues = {}

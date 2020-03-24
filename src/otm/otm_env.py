@@ -27,6 +27,7 @@ class otmEnvDiscrete:
     def encode_state(self, state):
         encoded_state = 0
         state_vec = []
+        road_connection_info = self.otm4rl.get_road_connection_info()
         i = 0
         for c_id, controller in self.controllers.items():
             stages = controller["stages"]
@@ -38,7 +39,7 @@ class otmEnvDiscrete:
                 for phase_id in phase_ids:
                     road_connections = self.otm4rl.get_signals()[c_id]["phases"][phase_id]["road_conns"]
                     for road_connection in road_connections:
-                        in_link_ids.append(self.otm4rl.get_road_connection_info(road_connection)["in_link"])
+                        in_link_ids.append(road_connection_info[road_connection]["in_link"])
                 in_link_ids = list(set(in_link_ids))
                 for link_id in in_link_ids:
                     agg_queue += state[link_id]["waiting"]
@@ -68,12 +69,18 @@ class otmEnvDiscrete:
 
     def reset(self):
          state = self.max_queues.copy()
+         in_links = set([rc_info["in_link"] for rc_info in self.otm4rl.get_road_connection_info().values()])
+         out_links = set([rc_info["out_link"] for rc_info in self.otm4rl.get_road_connection_info().values()])
+         out_links = list(out_links - in_links)
          for link_id in state.keys():
-            p = np.random.random()
-            transit_queue = p*state[link_id]
-            q = np.random.random()
-            waiting_queue = q*(state[link_id] - transit_queue)
-            state[link_id] = {"waiting": round(waiting_queue), "transit": round(transit_queue)}
+            if link_id in out_links:
+                state[link_id] = {"waiting": int(0), "transit": int(0)}
+            else:
+                p = np.random.random()
+                transit_queue = p*state[link_id]
+                q = np.random.random()
+                waiting_queue = q*(state[link_id] - transit_queue)
+                state[link_id] = {"waiting": round(waiting_queue), "transit": round(transit_queue)}
          self.otm4rl.initialize()
          self.set_state(state)
          return self.state
@@ -90,16 +97,22 @@ class otmEnvDiscrete:
         self.state, state_vec = self.encode_state(next_state)
         reward = -state_vec.sum()
 
-        #self.plot_environment().draw()
-
         return self.state, reward
 
-    def plot_environment(self):
-        fig, ax = plt.subplots()
+    def plot_queues(self, queue_dynamics, signal_dynamics, link_id):
+        # Ex: queue_dynamics = {1: {"waiting": [20, 30, 40, 50, 40, 30],
+        #                           "transit": [100, 110, 100, 99, 90, 95]}
+        #                      }
+        # Ex: signal_dynamics = {1: [0, 0, 1], 2: [1, 0, 0], 3: [1, 1, 1]}
+        # plot a graph of number of vehicles in waiting queue over time, given a link_id
+        # plot a vetical line: green if the signal turned green and red otherwise
+        pass
+
+    def build_network_lines(self, state):
 
         nodes = {}
-        for node_id in self.otm4rl.otmwrapper.otm.scenario().get_node_ids():
-            node_info = self.otm4rl.otmwrapper.otm.scenario().get_node_with_id(node_id)
+        for node_id in self.otm4rl.get_node_ids():
+            node_info = self.otm4rl.get_node_with_id(node_id)
             nodes[node_id] = {'x': node_info.getX(), 'y': node_info.getY()}
 
         lines = []
@@ -109,10 +122,8 @@ class otmEnvDiscrete:
         minY = float('Inf')
         maxY = -float('Inf')
 
-        state = self.otm4rl.get_queues()
-
-        for link_id in self.otm4rl.otmwrapper.otm.scenario().get_link_ids():
-            link_info = self.otm4rl.otmwrapper.otm.scenario().get_link_with_id(link_id)
+        for link_id in self.otm4rl.get_link_ids():
+            link_info = self.otm4rl.get_link_with_id(link_id)
 
             start_point = nodes[link_info.getStart_node_id()]
             end_point = nodes[link_info.getEnd_node_id()]
@@ -149,7 +160,29 @@ class otmEnvDiscrete:
             minY = min([minY, p0[1], p1[1]])
             maxY = max([maxY, p0[1], p1[1]])
 
-        cmap = plt.get_cmap('hot')
+        return lines, norms, minX, maxX, minY, maxY
+
+    def get_signal_positions(self, lines, control):
+
+        link_coords = dict(zip(self.otm4rl.get_link_ids(), lines))
+        road_connection_info = self.otm4rl.get_road_connection_info()
+        signal_positions = dict()
+        for c_id, stage in control.items():
+            phase_ids = self.controllers[c_id]["stages"][stage]["phases"]
+            for phase_id in phase_ids:
+                road_connections = self.otm4rl.get_signals()[c_id]["phases"][phase_id]["road_conns"]
+                for road_connection in road_connections:
+                    in_link_id = road_connection_info[road_connection]["in_link"]
+                    out_link_id = road_connection_info[road_connection]["out_link"]
+                    signal_positions[road_connection] = {"in_link": link_coords[in_link_id], "out_link": link_coords[out_link_id]}
+        return signal_positions
+
+    def plot_environment(self, state, control):
+        fig, ax = plt.subplots()
+
+        lines, norms, minX, maxX, minY, maxY = self.build_network_lines(state)
+
+        cmap = plt.get_cmap('Wistia')
         all_colors = [cmap(z) for z in norms]
         lc = LineCollection(lines, colors = all_colors)
         lc.set_linewidths(15)
@@ -167,8 +200,17 @@ class otmEnvDiscrete:
             c = (maxY + minY) / 2
             ax.set_ylim((c - dX / 2, c + dX / 2))
 
+        signal_positions = self.get_signal_positions(lines, control)
+
+        for rc in signal_positions.values():
+            p0 = rc["in_link"][0]
+            p1 = rc["in_link"][1]
+            plt.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='-'))
+            p0 = rc["out_link"][0]
+            p1 = rc["out_link"][1]
+            plt.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='->'))
+
         return plt
-        # color gradient for links
         # plot traffic lights
         # show time
 

@@ -72,7 +72,7 @@ def test_get_control():
 
 	otm4rl = get_otm4rl()
 	otm4rl.initialize()
-	otm4rl.advance(float(60))
+	otm4rl.advance(float(650))
 
 	# action[controller_id] = active stage id
 	control = otm4rl.get_control()
@@ -118,7 +118,7 @@ def test_set_control():
 	print(otm4rl.get_control())
 	print(otm4rl.get_queues())
 
-	otm4rl.set_control({1:0,2:1,3:1})
+	otm4rl.set_control({1:0,2:1,3:2})
 	print(otm4rl.get_queues())
 	# this line below hangs
 	otm4rl.advance(float(100))
