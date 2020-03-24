@@ -15,6 +15,15 @@ class OTM4RL:
     def get_link_ids(self):
         return self.otmwrapper.otm.scenario().get_link_ids()
 
+    def get_node_ids(self):
+        return self.otmwrapper.otm.scenario().get_node_ids()
+
+    def get_link_with_id(self, link_id):
+        return self.otmwrapper.otm.scenario().get_link_with_id(link_id)
+
+    def get_node_with_id(self, node_id):
+        return self.otmwrapper.otm.scenario().get_node_with_id(node_id)
+
     def get_road_connection_info(self):
 
         road_connections = {1: {"in_link":1, "out_link":2},

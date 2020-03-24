@@ -76,28 +76,41 @@ def test_step():
 
 	del env
 
+def test_get_signal_positions():
+	env = get_env()
+	env.reset()
+	env.otm4rl.advance(100)
+	control = env.otm4rl.get_control()
+	state = env.otm4rl.get_queues()
+	lines = env.build_network_lines(state)[0]
+	print(env.get_signal_positions(lines, control))
+
 def test_plot_environment():
 	env = get_env()
 
 	env.reset()
-	env.plot_environment().show()
 	action = np.random.choice(env.action_space)
-	print(env.decode_action(action))
 	state, reward = env.step(action)
-	env.plot_environment().show()
 	action = np.random.choice(env.action_space)
+	state = env.otm4rl.get_queues()
 	print(env.decode_action(action))
+	env.plot_environment(state, env.decode_action(action)).show()
 	state, reward = env.step(action)
-	env.plot_environment().show()
 	action = np.random.choice(env.action_space)
+	state = env.otm4rl.get_queues()
 	print(env.decode_action(action))
+	env.plot_environment(state, env.decode_action(action)).show()
 	state, reward = env.step(action)
-	env.plot_environment().show()
+	action = np.random.choice(env.action_space)
+	state = env.otm4rl.get_queues()
+	print(env.decode_action(action))
+	env.plot_environment(state, env.decode_action(action)).show()
 
 if __name__ == '__main__':
-	test_encode_state()
-	test_decode_action()
+	# test_encode_state()
+	# test_decode_action()
 	# test_set_state()
 	# test_reset()
 	# test_step()
-	# test_plot_environment()
+	# test_get_signal_positions()
+	test_plot_environment()
