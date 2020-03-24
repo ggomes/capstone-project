@@ -10,7 +10,7 @@ def get_config():
 	return configfile
 
 def get_env():
-    return otmEnvDiscrete({"num_states": 2, "num_actions": 2, "time_step": 200}, get_config())
+    return otmEnvDiscrete({"num_states": 2, "num_actions": 2, "time_step": 200, "plot_precision": 1, "buffer": True}, get_config())
 
 def test_decode_action():
     env = get_env()
@@ -94,17 +94,22 @@ def test_plot_environment():
 	action = np.random.choice(env.action_space)
 	state = env.otm4rl.get_queues()
 	print(env.decode_action(action))
-	env.plot_environment(state, env.decode_action(action)).show()
+	env.plot_environment(state, env.decode_action(action))
 	state, reward = env.step(action)
 	action = np.random.choice(env.action_space)
 	state = env.otm4rl.get_queues()
 	print(env.decode_action(action))
-	env.plot_environment(state, env.decode_action(action)).show()
+	env.plot_environment(state, env.decode_action(action))
 	state, reward = env.step(action)
 	action = np.random.choice(env.action_space)
 	state = env.otm4rl.get_queues()
 	print(env.decode_action(action))
-	env.plot_environment(state, env.decode_action(action)).show()
+	env.plot_environment(state, env.decode_action(action))
+
+def test_plot_queues():
+	env = get_env()
+
+	env.plot_queues(3, "waiting")
 
 if __name__ == '__main__':
 	# test_encode_state()
@@ -113,4 +118,5 @@ if __name__ == '__main__':
 	# test_reset()
 	# test_step()
 	# test_get_signal_positions()
-	test_plot_environment()
+	test_plot_queues()
+	# test_plot_environment()
