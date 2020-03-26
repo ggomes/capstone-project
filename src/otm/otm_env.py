@@ -23,35 +23,8 @@ class otmEnvDiscrete:
         self.state_space = range(self.num_states ** (self.num_intersections * 2))
         self.max_queues = self.otm4rl.get_max_queues()
         self.buffer = env_info["buffer"]
-        self.queue_buffer = {1: {"waiting": [20, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          2: {"waiting": [30, 50, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          3: {"waiting": [40, 60, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          4: {"waiting": [50, 70, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          5: {"waiting": [10, 50, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          6: {"waiting": [30, 70, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          7: {"waiting": [40, 80, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          8: {"waiting": [10, 40, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          9: {"waiting": [20, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          10: {"waiting": [21, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          11: {"waiting": [22, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          12: {"waiting": [23, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          13: {"waiting": [24, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          14: {"waiting": [25, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          15: {"waiting": [26, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          16: {"waiting": [27, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          17: {"waiting": [28, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          18: {"waiting": [29, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          19: {"waiting": [30, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          20: {"waiting": [34, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          21: {"waiting": [50, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          22: {"waiting": [32, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          23: {"waiting": [12, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          24: {"waiting": [19, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          25: {"waiting": [55, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          26: {"waiting": [29, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          27: {"waiting": [12, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]},
-                          28: {"waiting": [40, 30, 40, 50, 40, 30], "transit": [100, 110, 100, 99, 90, 95]}}
-        self.signal_buffer = {1: [0, 0, 1, 2, 3, 1], 2: [1, 0, 3, 2, 2, 1], 3: [1, 1, 1, 2, 2, 2]}
+        self.queue_buffer = dict(list(zip(self.otm4rl.get_link_ids(), [{"waiting": [], "transit": []} for i in self.otm4rl.get_link_ids()])))
+        self.signal_buffer = dict(list(zip(self.controllers.keys(), [[] for i in self.controllers.keys()])))
         # self.seed()
 
     # def seed(self, seed=None):
@@ -117,21 +90,44 @@ class otmEnvDiscrete:
                 state[link_id] = {"waiting": round(waiting_queue), "transit": round(transit_queue)}
          self.otm4rl.initialize()
          self.set_state(state)
+         self.add_queue_buffer()
+
          return self.state
 
     def step(self, action):
         assert action in self.action_space, "%r (%s) invalid" % (action, type(action))
 
         self.otm4rl.set_control(self.decode_action(action))
+        self.add_signal_buffer()
 
         self.otm4rl.advance(self.time_step)
 
         next_state = self.otm4rl.get_queues()
+        self.add_queue_buffer()
 
         self.state, state_vec = self.encode_state(next_state)
         reward = -state_vec.sum()
 
         return self.state, reward
+
+    def add_queue_buffer(self):
+
+        if self.buffer == True:
+            queues = self.otm4rl.get_queues()
+            for link_id in queues.keys():
+                self.queue_buffer[link_id]["waiting"].append(queues[link_id]["waiting"])
+                self.queue_buffer[link_id]["transit"].append(queues[link_id]["transit"])
+        else:
+            pass
+
+    def add_signal_buffer(self):
+
+        if self.buffer == True:
+            signals = self.otm4rl.get_control()
+            for c_id in signals:
+                self.signal_buffer[c_id].append(signals[c_id])
+        else:
+            pass
 
     def plot_queues(self, link_id, queue_type, from_time = 0, to_time = 10):
 
