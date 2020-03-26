@@ -118,7 +118,7 @@ def test_plot_queues(link_id):
 	env.add_queue_buffer()
 
 	for k in range(5):
-		for i in [0,1]:
+		for i in [0,1,2]:
 			env.otm4rl.set_control({1: i, 2: 0, 3: 0})
 			print(env.otm4rl.get_control())
 			env.add_signal_buffer()

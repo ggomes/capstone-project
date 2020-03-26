@@ -7,14 +7,14 @@
 	</commodities>
 
 	<demands>
-		<demand link_id="1" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="6" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="11" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="14" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="17" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="20" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="23" commodity_id="1" dt="1000">200,0</demand>
-    <demand link_id="26" commodity_id="1" dt="1000">200,0</demand>
+		<demand link_id="1" commodity_id="1" dt="1000">1500,0</demand>
+    <demand link_id="6" commodity_id="1" dt="1000">1500,0</demand>
+    <demand link_id="11" commodity_id="1" dt="1000">750,0</demand>
+    <demand link_id="14" commodity_id="1" dt="1000">750,0</demand>
+    <demand link_id="17" commodity_id="1" dt="1000">750,0</demand>
+    <demand link_id="20" commodity_id="1" dt="1000">750,0</demand>
+    <demand link_id="23" commodity_id="1" dt="1000">750,0</demand>
+    <demand link_id="26" commodity_id="1" dt="1000">750,0</demand>
 	</demands>
 
 	<models>

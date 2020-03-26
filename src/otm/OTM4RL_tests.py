@@ -118,7 +118,7 @@ def test_set_control():
 	print(otm4rl.get_control())
 	print(otm4rl.get_queues())
 
-	otm4rl.set_control({1:0,2:1,3:2})
+	otm4rl.set_control({1:2,2:2,3:2})
 	print(otm4rl.get_queues())
 	# this line below hangs
 	otm4rl.advance(float(100))
@@ -136,5 +136,5 @@ if __name__ == '__main__':
 	# test_get_controller_infos()
 	# test_get_queues()
 	# test_get_control()
-	test_set_queues()
-	# test_set_control()
+	#test_set_queues()
+	test_set_control()

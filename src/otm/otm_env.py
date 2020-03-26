@@ -169,7 +169,8 @@ class otmEnvDiscrete:
         colors = ["g" if stages[i] in link_stages else "r" for i in range(len(stages))]
         for i in range(len(colors)):
             ax.axvline(x=stage_times[i], color = colors[i])
-            ax.text(stage_times[i] + 0.05*self.time_step, 0.98*ax.get_ylim()[1], stages[i] if stages[i] in link_stages else "")
+            y = (ax.get_ylim()[1] - ax.get_ylim()[0])*0.96 + ax.get_ylim()[0]
+            ax.text(stage_times[i] + 0.05*self.time_step, y, stages[i] if stages[i] in link_stages else "")
 
         plt.title("Link " + str(link_id) + " - Queue dynamics (" + queue_type + " queue)")
         plt.show()
