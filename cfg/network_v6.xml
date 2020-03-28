@@ -276,14 +276,14 @@
       <target_actuators ids="1"/>
       <parameters>
         <parameter name="start_time" value="0"/>
-        <parameter name="cycle" value="1200"/>
-        <parameter name="offset" value="30"/>
+        <parameter name="cycle" value="120000"/>
+        <parameter name="offset" value="0"/>
       </parameters>
       <stages>
-        <stage phases="1,6" duration="300"/>
-        <stage phases="7" duration="300"/>
-        <stage phases="12" duration="300"/>
-        <stage phases="13,14" duration="300"/>
+        <stage phases="1,6" duration="30000"/>
+        <stage phases="7" duration="30000"/>
+        <stage phases="12" duration="30000"/>
+        <stage phases="13,14" duration="30000"/>
       </stages>
     </controller>
 
@@ -291,14 +291,14 @@
       <target_actuators ids="2"/>
       <parameters>
         <parameter name="start_time" value="0"/>
-        <parameter name="cycle" value="1200"/>
-        <parameter name="offset" value="30"/>
+        <parameter name="cycle" value="120000"/>
+        <parameter name="offset" value="0"/>
       </parameters>
       <stages>
-        <stage phases="2,5" duration="300"/>
-        <stage phases="8" duration="300"/>
-        <stage phases="11" duration="300"/>
-        <stage phases="15,16" duration="300"/>
+        <stage phases="2,5" duration="30000"/>
+        <stage phases="8" duration="30000"/>
+        <stage phases="11" duration="30000"/>
+        <stage phases="15,16" duration="30000"/>
       </stages>
     </controller>
 
@@ -306,14 +306,14 @@
       <target_actuators ids="3"/>
       <parameters>
         <parameter name="start_time" value="0"/>
-        <parameter name="cycle" value="1200"/>
-        <parameter name="offset" value="30"/>
+        <parameter name="cycle" value="120000"/>
+        <parameter name="offset" value="0"/>
       </parameters>
       <stages>
-        <stage phases="3,4" duration="300"/>
-        <stage phases="9" duration="300"/>
-        <stage phases="10" duration="300"/>
-        <stage phases="17,18" duration="300"/>
+        <stage phases="3,4" duration="30000"/>
+        <stage phases="9" duration="30000"/>
+        <stage phases="10" duration="30000"/>
+        <stage phases="17,18" duration="30000"/>
       </stages>
     </controller>
 

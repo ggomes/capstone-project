@@ -9,6 +9,11 @@ class otmEnvDiscrete:
 
     def __init__(self, env_info, configfile):
 
+        self.time_step = env_info["time_step"]
+        self.plot_precision = env_info["plot_precision"]
+
+        assert (type(self.plot_precision) == int and self.plot_precision >= 1), "plot_precision must be an integer greater than or equal to 1"
+
         self.otm4rl = OTM4RL(configfile)
         self.num_states = env_info["num_states"]
         self.num_actions = env_info["num_actions"]
@@ -17,7 +22,9 @@ class otmEnvDiscrete:
         self.action_space = range(self.num_actions ** self.num_intersections)
         self.state_space = range(self.num_states ** (self.num_intersections * 2))
         self.max_queues = self.otm4rl.get_max_queues()
-        self.time_step = env_info["time_step"]
+        self.buffer = env_info["buffer"]
+        self.queue_buffer = dict(list(zip(self.otm4rl.get_link_ids(), [{"waiting": [], "transit": []} for i in self.otm4rl.get_link_ids()])))
+        self.signal_buffer = dict(list(zip(self.controllers.keys(), [[] for i in self.controllers.keys()])))
         # self.seed()
 
     # def seed(self, seed=None):
@@ -83,30 +90,90 @@ class otmEnvDiscrete:
                 state[link_id] = {"waiting": round(waiting_queue), "transit": round(transit_queue)}
          self.otm4rl.initialize()
          self.set_state(state)
+         self.add_queue_buffer()
+
          return self.state
 
-    def step(self, action, render = False):
+    def step(self, action):
         assert action in self.action_space, "%r (%s) invalid" % (action, type(action))
 
         self.otm4rl.set_control(self.decode_action(action))
+        self.add_signal_buffer()
 
         self.otm4rl.advance(self.time_step)
 
         next_state = self.otm4rl.get_queues()
+        self.add_queue_buffer()
 
         self.state, state_vec = self.encode_state(next_state)
         reward = -state_vec.sum()
 
         return self.state, reward
 
-    def plot_queues(self, queue_dynamics, signal_dynamics, link_id):
-        # Ex: queue_dynamics = {1: {"waiting": [20, 30, 40, 50, 40, 30],
-        #                           "transit": [100, 110, 100, 99, 90, 95]}
-        #                      }
-        # Ex: signal_dynamics = {1: [0, 0, 1], 2: [1, 0, 0], 3: [1, 1, 1]}
-        # plot a graph of number of vehicles in waiting queue over time, given a link_id
-        # plot a vetical line: green if the signal turned green and red otherwise
-        pass
+    def add_queue_buffer(self):
+
+        if self.buffer == True:
+            queues = self.otm4rl.get_queues()
+            for link_id in queues.keys():
+                self.queue_buffer[link_id]["waiting"].append(queues[link_id]["waiting"])
+                self.queue_buffer[link_id]["transit"].append(queues[link_id]["transit"])
+        else:
+            pass
+
+    def add_signal_buffer(self):
+
+        if self.buffer == True:
+            signals = self.otm4rl.get_control()
+            for c_id in signals:
+                self.signal_buffer[c_id].append(signals[c_id])
+        else:
+            pass
+
+    def plot_queues(self, link_id, queue_type, from_time = 0, to_time = 10):
+
+        road_connection_info = self.otm4rl.get_road_connection_info()
+
+        link_rc = []
+        link_controller = None
+        link_stages = []
+        for rc, rc_info in road_connection_info.items():
+            if link_id == rc_info["in_link"]:
+                link_rc.append(rc)
+
+        for c_id in self.controllers.keys():
+            for stage in range(len(self.controllers[c_id]["stages"])):
+                phase_ids = self.controllers[c_id]["stages"][stage]["phases"]
+                for phase_id in phase_ids:
+                    road_connections = self.otm4rl.get_signals()[c_id]["phases"][phase_id]["road_conns"]
+                    if set.intersection(set(link_rc),set(road_connections)) != set():
+                        link_stages.append(stage)
+            if len(link_stages) != 0:
+                link_controller = c_id
+                break
+
+        if link_controller == None:
+            print("This link is leaving the network or it is a demand link, so it is not impacted by traffic lights")
+            return
+
+        fig, ax = plt.subplots()
+        queues = self.queue_buffer[link_id][queue_type]
+        step = self.time_step/self.plot_precision
+        ax.plot([i*step for i in range(len(queues))], queues)
+
+        stages = np.array(self.signal_buffer[link_controller])
+        stage_times = np.array(range(len(stages)))*self.time_step
+        aux = np.array([stages[i] if (i == 0 or stages[i-1] != stages[i]) else -1 for i in range(len(stages))])
+        changing_stages = np.array([aux[i] if (i == 0 or aux[i] in link_stages or (aux[i-1] in link_stages and aux[i] not in link_stages)) else -1 for i in range(len(aux))])
+        stages = np.extract(changing_stages >= 0, stages)
+        stage_times = np.extract(changing_stages >=0, stage_times)
+        colors = ["g" if stages[i] in link_stages else "r" for i in range(len(stages))]
+        for i in range(len(colors)):
+            ax.axvline(x=stage_times[i], color = colors[i])
+            y = (ax.get_ylim()[1] - ax.get_ylim()[0])*0.96 + ax.get_ylim()[0]
+            ax.text(stage_times[i] + 0.05*self.time_step, y, stages[i] if stages[i] in link_stages else "")
+
+        plt.title("Link " + str(link_id) + " - Queue dynamics (" + queue_type + " queue)")
+        plt.show()
 
     def build_network_lines(self, state):
 
@@ -205,12 +272,12 @@ class otmEnvDiscrete:
         for rc in signal_positions.values():
             p0 = rc["in_link"][0]
             p1 = rc["in_link"][1]
-            plt.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='-'))
+            ax.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='-'))
             p0 = rc["out_link"][0]
             p1 = rc["out_link"][1]
-            plt.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='->'))
+            ax.annotate(s='', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='->'))
 
-        return plt
+        plt.show()
         # plot traffic lights
         # show time
 
